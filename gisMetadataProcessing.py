@@ -33,7 +33,7 @@ def getfasturi(value, keywordkey):
 
 
 def splitkeywords(fieldname):
-    """Split multiple keyword values."""
+    """Split multiple keyword values separated by pipe delimiters."""
     values = row[fieldname].split('|')
     for value in values:
         creatkeyword(value)
