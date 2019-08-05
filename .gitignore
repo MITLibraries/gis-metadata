@@ -3,3 +3,5 @@
 *.xml
 !gis.csv
 !sample.xml
+!fast.csv
+Updated/*

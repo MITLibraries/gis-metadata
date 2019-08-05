@@ -11,7 +11,6 @@ def creatkeyword(value):
         getfasturi(value, keywordkey)
     else:
         pass
-    # kwelem.append(keywordkey)
     keyword.append(keywordkey)
 
 
@@ -42,10 +41,11 @@ def splitkeywords(fieldname):
 
 dir = os.path.dirname(os.path.realpath(__file__))
 
-
 vocabdict = {'iso': 'ISO 19115 Topic Category', 'fst': 'searchFAST'}
 
-metadatacsv = csv.DictReader(open('gis.csv'))
+csvfile = 'gis.csv'
+
+metadatacsv = csv.DictReader(open(csvfile))
 
 for row in metadatacsv:
     xml = BeautifulSoup('<keywords></keywords>', 'lxml')
@@ -53,10 +53,7 @@ for row in metadatacsv:
     for fieldname, value in row.items():
         if fieldname == 'filename':
             filename = row[fieldname]
-            print(dir)
-            originalfile = os.path.join(dir, 'Originals', filename)
-            print(originalfile)
-            file = BeautifulSoup(open(originalfile), 'lxml')
+            file = BeautifulSoup(open(filename), 'lxml')
             file = file.find('html').find('body').findChild()
             for metadata in file.findAll('keywords'):
                 metadata.decompose()
@@ -64,19 +61,15 @@ for row in metadatacsv:
             tag = fieldname[:-3]
             vocab = fieldname[-3:]
             keywordxml = BeautifulSoup('<' + tag + '></' + tag + '>', 'lxml')
-            ##
             keyword = keywordxml.find('html').find('body').findChild()
             tagkt = keywordxml.new_tag(tag + 'kt')
             tagkt.string = vocabdict[vocab]
-            # kwelem = keyword.find('html').find('body').findChild()
-            # kwelem.append(tagkt)
             keyword.append(tagkt)
             if '|' in row[fieldname]:
                 splitkeywords(fieldname)
             else:
                 value = row[fieldname]
                 creatkeyword(value)
-            # keywords.append(kwelem)
             keywords.append(keyword)
 
     file.find('idinfo').append(keywords)
