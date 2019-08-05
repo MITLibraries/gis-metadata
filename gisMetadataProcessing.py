@@ -1,17 +1,17 @@
-from bs4 import BeautifulSoup
+from lxml import etree
 import csv
 import os
 
 
-def creatkeyword(value, keywordxml):
+def creatkeyword(value, newkeyword):
     """Create keyword element."""
-    keywordkey = keywordxml.new_tag(tag + 'key')
-    keywordkey.string = value
+    keywordkey = etree.SubElement(newkeyword, tag + 'key')
+    keywordkey.text = value
     if vocab == 'fst':
         getfasturi(value, keywordkey)
     else:
         pass
-    keyword.append(keywordkey)
+    newkeyword.append(keywordkey)
 
 
 def getfasturi(value, keywordkey):
@@ -21,7 +21,6 @@ def getfasturi(value, keywordkey):
     for row in fastcsv:
         if value == row['label']:
             urn = row['uri']
-            print(urn)
             break
         else:
             pass
@@ -29,14 +28,14 @@ def getfasturi(value, keywordkey):
         print('No FAST URI - check value in spreadsheet')
         exit()
     else:
-        keywordkey['urn'] = urn
+        keywordkey.attrib['urn'] = urn
 
 
-def splitkeywords(fieldname, keywordxml):
+def splitkeywords(fieldname, newkeyword):
     """Split multiple keyword values separated by pipe delimiters."""
     values = row[fieldname].split('|')
     for value in values:
-        creatkeyword(value, keywordxml)
+        creatkeyword(value, newkeyword)
 
 
 currdir = os.getcwd()
@@ -48,34 +47,34 @@ csvfile = 'gis.csv'
 metadatacsv = csv.DictReader(open(csvfile))
 
 for row in metadatacsv:
-    xml = BeautifulSoup('<keywords></keywords>', 'lxml')
-    keywords = xml.find('html').find('body').findChild()
+    newkeywords = etree.Element('keywords')
     for fieldname, value in row.items():
         if fieldname == 'filename':
             filename = row[fieldname]
-            file = BeautifulSoup(open(filename), 'lxml')
-            file = file.find('html').find('body').findChild()
-            for metadata in file.findAll('keywords'):
-                metadata.decompose()
+            print(filename)
+            file = etree.parse(filename)
+            oldkeywords = file.find('idinfo').find('keywords')
+            oldkeywords.getparent().remove(oldkeywords)
+
         else:
             tag = fieldname[:-3]
             vocab = fieldname[-3:]
-            keywordxml = BeautifulSoup('<' + tag + '></' + tag + '>', 'lxml')
-            keyword = keywordxml.find('html').find('body').findChild()
-            tagkt = keywordxml.new_tag(tag + 'kt')
-            tagkt.string = vocabdict[vocab]
-            keyword.append(tagkt)
+            newkeyword = etree.Element(tag)
+            tagkt = etree.SubElement(newkeyword, tag + 'kt')
+            tagkt.text = vocabdict[vocab]
             if '|' in row[fieldname]:
-                splitkeywords(fieldname, keywordxml)
+                splitkeywords(fieldname, newkeyword)
             else:
                 value = row[fieldname]
-                creatkeyword(value, keywordxml)
-            keywords.append(keyword)
+                creatkeyword(value, newkeyword)
+            newkeywords.append(newkeyword)
 
-    file.find('idinfo').append(keywords)
+    idinfo = file.find('idinfo')
+    idinfo.append(newkeywords)
     updatedFolder = os.path.join(currdir, 'Updated')
     if not os.path.exists(updatedFolder):
         os.makedirs(updatedFolder)
     updatedfile = os.path.join(updatedFolder, filename)
-    f = open(updatedfile, 'w')
-    f.write(str(file))
+
+    f = open(updatedfile, 'wb')
+    f.write(etree.tostring(file, pretty_print=True))
