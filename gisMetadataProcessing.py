@@ -3,7 +3,7 @@ import csv
 import os
 
 
-def creatkeyword(value):
+def creatkeyword(value, keywordxml):
     """Create keyword element."""
     keywordkey = keywordxml.new_tag(tag + 'key')
     keywordkey.string = value
@@ -32,14 +32,14 @@ def getfasturi(value, keywordkey):
         keywordkey['urn'] = urn
 
 
-def splitkeywords(fieldname):
+def splitkeywords(fieldname, keywordxml):
     """Split multiple keyword values separated by pipe delimiters."""
     values = row[fieldname].split('|')
     for value in values:
-        creatkeyword(value)
+        creatkeyword(value, keywordxml)
 
 
-dir = os.path.dirname(os.path.realpath(__file__))
+currdir = os.getcwd()
 
 vocabdict = {'iso': 'ISO 19115 Topic Category', 'fst': 'searchFAST'}
 
@@ -66,14 +66,14 @@ for row in metadatacsv:
             tagkt.string = vocabdict[vocab]
             keyword.append(tagkt)
             if '|' in row[fieldname]:
-                splitkeywords(fieldname)
+                splitkeywords(fieldname, keywordxml)
             else:
                 value = row[fieldname]
-                creatkeyword(value)
+                creatkeyword(value, keywordxml)
             keywords.append(keyword)
 
     file.find('idinfo').append(keywords)
-    updatedFolder = os.path.join(dir, 'Updated')
+    updatedFolder = os.path.join(currdir, 'Updated')
     if not os.path.exists(updatedFolder):
         os.makedirs(updatedFolder)
     updatedfile = os.path.join(updatedFolder, filename)
