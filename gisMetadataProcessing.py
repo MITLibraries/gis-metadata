@@ -1,6 +1,7 @@
 from lxml import etree
 import csv
 import os
+import pathlib
 
 
 def creatkeyword(value, newkeyword):
@@ -25,7 +26,7 @@ def getfasturi(value, keywordkey):
         else:
             pass
     if urn == '':
-        print('No FAST URI - check value in spreadsheet')
+        print('No FAST URI for ' + value + ' - check value in spreadsheet')
         exit()
     else:
         keywordkey.attrib['urn'] = urn
@@ -38,23 +39,32 @@ def splitkeywords(fieldname, newkeyword):
         creatkeyword(value, newkeyword)
 
 
-currdir = os.getcwd()
+def createfile(file, outputfilepath):
+    """Create XML file."""
+    updatedfile = os.path.join(outputfilepath, filename)
+    f = open(updatedfile, 'wb')
+    f.write(etree.tostring(file, pretty_print=True))
+
 
 vocabdict = {'iso': 'ISO 19115 Topic Category', 'fst': 'searchFAST'}
 
 csvfile = 'gis.csv'
+outputfilepath = ''
+
 
 metadatacsv = csv.DictReader(open(csvfile))
-
 for row in metadatacsv:
     newkeywords = etree.Element('keywords')
     for fieldname, value in row.items():
         if fieldname == 'filename':
-            filename = row[fieldname]
+            filepath = row[fieldname]
+            p = pathlib.Path(filepath)
+            filename = p.name
             print(filename)
-            file = etree.parse(filename)
+            file = etree.parse(filepath)
             oldkeywords = file.find('idinfo').find('keywords')
-            oldkeywords.getparent().remove(oldkeywords)
+            if oldkeywords is not None:
+                oldkeywords.getparent().remove(oldkeywords)
 
         else:
             tag = fieldname[:-3]
@@ -71,10 +81,5 @@ for row in metadatacsv:
 
     idinfo = file.find('idinfo')
     idinfo.append(newkeywords)
-    updatedFolder = os.path.join(currdir, 'Updated')
-    if not os.path.exists(updatedFolder):
-        os.makedirs(updatedFolder)
-    updatedfile = os.path.join(updatedFolder, filename)
 
-    f = open(updatedfile, 'wb')
-    f.write(etree.tostring(file, pretty_print=True))
+    createfile(file, outputfilepath)
