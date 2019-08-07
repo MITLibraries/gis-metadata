@@ -1,6 +1,7 @@
 from lxml import etree
 import csv
 import os
+import pathlib
 
 
 def creatkeyword(value, newkeyword):
@@ -57,12 +58,8 @@ for row in metadatacsv:
     for fieldname, value in row.items():
         if fieldname == 'filename':
             filepath = row[fieldname]
-            if '\\' in filepath:
-                filename = filepath[filepath.rindex('\\') + 1:]
-            elif '/' in filepath:
-                filename = filepath[filepath.rindex('/') + 1:]
-            else:
-                filename = filepath
+            p = pathlib.Path(filepath)
+            filename = p.name
             print(filename)
             file = etree.parse(filepath)
             oldkeywords = file.find('idinfo').find('keywords')
